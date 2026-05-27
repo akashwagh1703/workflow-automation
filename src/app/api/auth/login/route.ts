@@ -9,11 +9,14 @@ export async function POST(req: Request) {
   const password = String(form.get("password") ?? "");
 
   if (email !== env.ADMIN_EMAIL || password !== env.ADMIN_PASSWORD) {
-    return NextResponse.redirect(new URL("/login?error=1", req.url));
+    // Use 303 so the browser follows with GET (not POST).
+    return NextResponse.redirect(new URL("/login?error=1", req.url), 303);
   }
 
   const token = await signAdminSession({ sub: "admin", email });
-  const res = NextResponse.redirect(new URL("/dashboard", req.url));
+  // IMPORTANT: NextResponse.redirect defaults to 307 which preserves the POST method.
+  // That causes the browser to POST /dashboard -> 405. Use 303 to switch to GET.
+  const res = NextResponse.redirect(new URL("/dashboard", req.url), 303);
 
   res.cookies.set(env.COOKIE_NAME, token, {
     httpOnly: true,
