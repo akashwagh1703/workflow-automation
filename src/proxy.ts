@@ -5,8 +5,7 @@ import { verifyAdminSession, getAdminCookieName } from "@/lib/auth/jwt";
 
 export const config = {
   matcher: [
-    // NOTE: "/dashboard/:path*" does not reliably match the bare "/dashboard" path,
-    // so we include both to ensure consistent auth protection.
+    // Include both so auth protection is consistent.
     "/dashboard",
     "/dashboard/:path*",
     "/api/whatsapp/:path*",
@@ -19,17 +18,14 @@ export const config = {
   ],
 };
 
-export default async function middleware(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
   const cookieName = getAdminCookieName();
   const token = req.cookies.get(cookieName)?.value;
   const isApi = req.nextUrl.pathname.startsWith("/api/");
 
   if (!token) {
     if (isApi) {
-      return NextResponse.json(
-        { ok: false, error: "Unauthorized" },
-        { status: 401 },
-      );
+      return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
     return NextResponse.redirect(new URL("/login", req.url));
   }
@@ -42,6 +38,7 @@ export default async function middleware(req: NextRequest) {
       ? NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
       : NextResponse.redirect(new URL("/login", req.url));
 
+    // Clear the bad cookie so loops don't persist.
     res.cookies.set(cookieName, "", {
       httpOnly: true,
       sameSite: "lax",
@@ -52,3 +49,4 @@ export default async function middleware(req: NextRequest) {
     return res;
   }
 }
+
