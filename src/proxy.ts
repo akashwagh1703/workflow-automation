@@ -2,10 +2,11 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 import { verifyAdminSession, getAdminCookieName } from "@/lib/auth/jwt";
+import { buildAbsoluteUrl } from "@/lib/auth/request-origin";
+import { clearSessionCookie } from "@/lib/auth/session-cookie";
 
 export const config = {
   matcher: [
-    // Include both so auth protection is consistent.
     "/dashboard",
     "/dashboard/:path*",
     "/api/whatsapp/:path*",
@@ -27,7 +28,7 @@ export default async function proxy(req: NextRequest) {
     if (isApi) {
       return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
     }
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(buildAbsoluteUrl(req, "/login?reason=missing"));
   }
 
   try {
@@ -36,17 +37,9 @@ export default async function proxy(req: NextRequest) {
   } catch {
     const res = isApi
       ? NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
-      : NextResponse.redirect(new URL("/login", req.url));
+      : NextResponse.redirect(buildAbsoluteUrl(req, "/login?reason=invalid"));
 
-    // Clear the bad cookie so loops don't persist.
-    res.cookies.set(cookieName, "", {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      expires: new Date(0),
-    });
+    clearSessionCookie(res);
     return res;
   }
 }
-

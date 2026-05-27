@@ -1,6 +1,9 @@
 import Link from "next/link";
 
 import { DashboardTopbar } from "@/components/dashboard-topbar";
+import { requireAdminPage } from "@/lib/auth/require-admin-page";
+
+export const dynamic = "force-dynamic";
 
 const nav = [
   { href: "/dashboard", label: "Dashboard" },
@@ -11,11 +14,13 @@ const nav = [
   { href: "/dashboard/settings", label: "Settings" },
 ] as const;
 
-export default function DashboardLayout({
+export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  await requireAdminPage();
+
   return (
     <div className="min-h-screen flex bg-background text-foreground">
       <aside className="w-64 border-r border-foreground/10 p-5 shrink-0">
