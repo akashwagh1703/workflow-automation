@@ -5,6 +5,9 @@ import { verifyAdminSession, getAdminCookieName } from "@/lib/auth/jwt";
 
 export const config = {
   matcher: [
+    // NOTE: "/dashboard/:path*" does not reliably match the bare "/dashboard" path,
+    // so we include both to ensure consistent auth protection.
+    "/dashboard",
     "/dashboard/:path*",
     "/api/whatsapp/:path*",
     "/api/workflows/:path*",
